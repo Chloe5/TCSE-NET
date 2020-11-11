@@ -3,21 +3,22 @@ import torch
 import pickle
 import numpy as np
 import math
+import gc
 
 #filepath = 'D:\\学术相关\\007.CasCN-master\\dataset_weibo'
 class MyDataset(Data.Dataset):
     def __init__(self, filepath, n_time_interval, time_interval):
         # 获得训练数据的总行
-        id, x, L, y, sz, time, _ = pickle.load(open(filepath, 'rb'))
+        _, x, L, y, sz, time, _ = pickle.load(open(filepath, 'rb'))
 
-        self.number = len(id)
+        self.number = len(x)
         batch_x = []
         batch_L = []
-        batch_y =  np.zeros(shape=(len(id), 1))
+        batch_y =  np.zeros(shape=(len(x), 1))
 
         batch_time_interval_index = []
         batch_rnn_index = []
-        for i in range(len(id)):
+        for i in range(len(x)):
             # x
             temp_x = []
             for k in range(len(x[i])):
@@ -45,11 +46,17 @@ class MyDataset(Data.Dataset):
             rnn_index_temp[:sz[i]] = 1
             batch_rnn_index.append(rnn_index_temp)
 
-            self.x = torch.tensor(batch_x)
-            self.L = torch.tensor(batch_L)
-            self.y = torch.tensor(batch_y)
-            self.time_interval_index = torch.tensor(batch_time_interval_index)
-            self.rnn_index = torch.tensor(batch_rnn_index)
+        self.x = torch.tensor(batch_x)
+        del(batch_x)
+        self.L = torch.tensor(batch_L)
+        del(batch_L)
+        self.y = torch.tensor(batch_y)
+        del(batch_y)
+        self.time_interval_index = torch.tensor(batch_time_interval_index)
+        del(batch_time_interval_index)
+        self.rnn_index = torch.tensor(batch_rnn_index)
+        del(batch_rnn_index)
+        gc.collect()
 
     def __len__(self):
         return self.number
