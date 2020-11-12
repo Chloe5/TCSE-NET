@@ -1,8 +1,6 @@
-import os
 import torch
 import torch.nn as nn
-import torch.nn.functional as F
-from ChebyGCN_Direc import ChebConv
+from casCN_model.ChebyGCN_Direc import ChebConv
 import numpy as np
 
 class chebLSTMCell(nn.Module):
@@ -163,7 +161,7 @@ class chebLSTM(nn.Module):
             # 每一个时间步都更新 h,c
             # 注意这里self.cell_list是一个模块(容器)
             for t in range(seq_len):
-                h, c = self.cell_list[layer_idx](input_tensor=cur_layer_input[:, t, :, :, :], graph=graph,
+                h, c = self.cell_list[layer_idx](input_tensor=cur_layer_input[:, t, :, :], graph=graph,
                                                  cur_state=[h, c])
                 # 储存输出，注意这里 h 就是此时间步的输出
                 output_inner.append(h)
@@ -211,7 +209,7 @@ class time_Decay(nn.Module):
         last_h = last_h.squeeze().permute(1,0,2,3)  #batch first
         last_h = torch.sum(last_h,dim =2)
         last_h = torch.reshape(last_h,(-1, hidden_dim))
-        rnn_index = torch.reshape(rnn_index,(-1,1))
+        rnn_index = torch.reshape(rnn_index,(-1))
         last_h = torch.matmul(rnn_index,last_h)
 
         time_interval_index =torch.reshape(time_interval_index,(-1,6))
