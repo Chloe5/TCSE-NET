@@ -3,17 +3,15 @@ import torch
 import numpy as np
 import math
 import pickle
-from matplotlib import pyplot as plt
-from torch.utils.tensorboard import SummaryWriter
 import time
-import dataload
+from casCN_model import dataload, ChebyLSTM
 import torch.utils.data as Data
 
 #*********data**********
 observation = 3 * 3600 -1
 n_time_interval = 6
 time_interval = math.ceil((observation+1)*1.0/n_time_interval)
-batch_size = 1
+batch_size = 8
 
 hidden_dim = (32,)
 kernel_size = (2,)
@@ -22,13 +20,11 @@ input_dim = 100
 dense1 = 32
 dense2 = 16
 
-data_path ="D:\\学术相关\\007.CasCN-master\\dataset_weibo"
-
-import ChebyLSTM
+data_path ="D:\\学术相关\\GCN 项目\\dataset\\"
 
 batch_first = True
 model = ChebyLSTM.MODEL(input_dim, hidden_dim, kernel_size, num_layers,
-                 batch_first, n_time_interval, dense1, dense2)
+                        batch_first, n_time_interval, dense1, dense2)
 
 criterion = nn.MSELoss(reduction= 'mean')
 
