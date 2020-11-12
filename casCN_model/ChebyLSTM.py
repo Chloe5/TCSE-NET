@@ -210,11 +210,11 @@ class time_Decay(nn.Module):
         last_h = torch.sum(last_h,dim =2)
         last_h = torch.reshape(last_h,(-1, hidden_dim))
         rnn_index = torch.reshape(rnn_index,(-1))
-        last_h = torch.matmul(rnn_index,last_h)
+        last_h = torch.mul(rnn_index,last_h)
 
         time_interval_index =torch.reshape(time_interval_index,(-1,6))
-        self.time_weight =time_interval_index.malmul(self.time_weight)
-        last_h = torch.matmul(self.time_weight, last_h)
+        self.time_weight =time_interval_index.matmul(self.time_weight)
+        last_h = torch.mul(self.time_weight, last_h)
         last_h = torch.reshape(last_h,(-1, n_step, hidden_dim))
         last_h = torch.sum(last_h, dim=1)
 
