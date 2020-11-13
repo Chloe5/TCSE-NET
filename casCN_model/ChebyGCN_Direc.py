@@ -33,7 +33,7 @@ class ChebConv(nn.Module):
         :param graph: the graph structure, [N, N]
         :return: convolution result, [B, N, D]
         """
-
+        print(inputs.shape)
         mul_L = self.cheb_polynomial(graph).unsqueeze(1)   # [K, 1, N, N]
 
         result = torch.matmul(mul_L, inputs)  # [K, B, N, C]

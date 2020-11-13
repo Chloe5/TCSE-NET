@@ -48,12 +48,12 @@ for i in range(10):
     if train_step / 160 ==0:
         input = math.floor(step/160)
         filepath = data_path + '\\data_train\\data_train_' + str(input) + '.pkl'
-        data_train = dataload.MyDataset(filepath, n_time_interval, time_interval)
+        data_train = dataload.MyDataset(filepath, n_time_interval)
         train_step = 0
 
-        data_train = Data.dataloader(data_train, batch_size =batch_size)
+        batch_data_train = Data.DataLoader(data_train, batch_size =batch_size)
 
-    for id, batch in enumerate(data_train):
+    for id, batch in enumerate(batch_data_train):
         batch_x, batch_L, n_steps, batch_y, batch_time_interval, batch_rnn_index = batch
 
         train_step += 1
@@ -68,17 +68,19 @@ for i in range(10):
 
         loss.backward()
         opt1.step()
+
     if step / display_step == 0:
         with torch.no_grad:
             if val_step / 160 == 0:
                 input = math.floor(val_step / 160)
                 filepath = data_path + '\\val_train\\val_train_' + str(input) + '.pkl'
-                data_val = dataload.MyDataset(filepath, n_time_interval, time_interval)
-                val_step =0
+                data_val = dataload.MyDataset(filepath, n_time_interval)
+                val_step = 0
 
-                data_val = Data.dataloader(data_train, batch_size=batch_size)
+                batch_data_val = Data.DataLoader(data_val, batch_size=batch_size)
 
-            for id, batch in enumerate(data_val):
+            val_loss = []
+            for id, batch in enumerate(batch_data_val):
                 val_x, val_L, n_steps, val_y, val_time_interval, val_rnn_index = batch
                 val_step += 1
 
@@ -86,9 +88,9 @@ for i in range(10):
                 val_pred = model(val_x, val_L, n_steps,
                                  hidden_dim, val_time_interval, val_rnn_index)
 
-                Val_loss = criterion(val_pred, val_y)
+                b_v_loss = criterion(val_pred, val_y)
 
-                val_loss.append(val_loss)
+                val_loss.append(b_v_loss)
             if np.mean(val_loss) < best_val_loss:
                 best_val_loss = np.mean(val_loss)
                 best_test_loss = np.mean(test_loss)
@@ -98,20 +100,21 @@ for i in range(10):
             if test_step / 160 == 0:
                 input = math.floor(test_step / 160)
                 filepath = data_path + '\\test_train\\test_train_' + str(input) + '.pkl'
-                data_test = dataload.MyDataset(filepath, n_time_interval, time_interval)
+                data_test = dataload.MyDataset(filepath, n_time_interval)
                 test_step = 0
-                data_test = Data.dataloader(data_train, batch_size=batch_size)
+                batch_data_test = Data.DataLoader(data_test, batch_size=batch_size)
 
-            for id, batch in enumerate(data_test):
+            test_loss = []
+            for id, batch in enumerate(batch_data_test):
                 test_x, test_L, n_steps, test_y, test_time_interval, test_rnn_index = batch
                 test_step += 1
-                test_loss = []
+
                 model.eval()
                 test_pred = model(test_x, test_L, n_steps,
                                   hidden_dim, test_time_interval, test_rnn_index)
-                test_loss = criterion(test_pred, test_y)
+                b_t_loss = criterion(test_pred, test_y)
 
-                test_loss.append(test_loss)
+                test_loss.append(b_t_loss)
 
             print("last test error:", np.mean(test_loss))
             pickle.dump((predict_result, test_y, test_loss), open(
