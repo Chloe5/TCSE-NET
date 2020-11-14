@@ -157,20 +157,24 @@ class chebLSTM(nn.Module):
 
             h, c = hidden_state[layer_idx]
             output_inner = []
+            output_inner_list = []
+            layer_output_1 = []
             # 每一个时间步都更新 h,c
             # 注意这里self.cell_list是一个模块(容器)
             for t in range(seq_len):
                 h, c = self.cell_list[layer_idx](input_tensor=cur_layer_input[:, t, :, :], graph=graph[t],
                                                  cur_state=[h, c])
 
-                print(h.shape)# 储存输出，注意这里 h 就是此时间步的输出
+                # 储存输出，注意这里 h 就是此时间步的输出
                 output_inner.append(h)
+                output_inner_list.append(h.tolist())
 
             # 这一层的输出作为下一次层的输入
             layer_output = torch.stack(output_inner, dim=1)
+            layer_output_1.append(output_inner_list)
             cur_layer_input = layer_output
 
-            layer_output_list.append(layer_output)
+            layer_output_list.append(layer_output_1)
             # 储存每一层的状态h，c
             last_state_list.append([h, c])
 
@@ -200,43 +204,47 @@ class chebLSTM(nn.Module):
         return param
 
 class time_Decay(nn.Module):
-    def __init__(self, time_interal_n):
+    def __init__(self, num_layers, time_interal_n):
         super(time_Decay,self).__init__()
 
-        self.time_weight = nn.Parameter(torch.Tensor([time_interal_n,1]))
+        self.num_layers = num_layers
+
+        self.time_weight = nn.Parameter(torch.FloatTensor(time_interal_n,1))
 
     def forward(self, last_h, n_step, hidden_dim, rnn_index, time_interval_index):
-        last_h = torch.tensor(last_h)
-        last_h = last_h.squeeze().permute(1,0,2,3)  #batch first
-        last_h = torch.sum(last_h,dim =2)
-        last_h = torch.reshape(last_h,(-1, hidden_dim))
-        rnn_index = torch.reshape(rnn_index,(-1,1))
-        last_h = torch.mul(rnn_index,last_h)
+        for t in range(self.num_layers):
+            last_h = last_h[t]
+            last_h = torch.tensor(last_h)
+            last_h = last_h.squeeze().permute(1, 0, 2, 3)  # batch first
+            last_h = torch.sum(last_h, dim=2)
+            last_h = torch.reshape(last_h, (-1, hidden_dim[t]))
+            rnn_index = torch.reshape(rnn_index, (-1, 1))
+            last_h = torch.mul(rnn_index, last_h)
 
-        time_interval_index =torch.reshape(time_interval_index,(-1,6))
-        self.time_weight =time_interval_index.matmul(self.time_weight)
-        last_h = torch.mul(self.time_weight, last_h)
-        last_h = torch.reshape(last_h,(-1, n_step, hidden_dim))
-        last_h = torch.sum(last_h, dim=1)
+            time_interval_index = torch.reshape(time_interval_index, (-1, 6))
+            time_interval_index = time_interval_index.matmul(self.time_weight)
+            last_h = torch.mul(time_interval_index, last_h)
+            last_h = torch.reshape(last_h, (-1, n_step, hidden_dim[t]))
+            last_h = torch.sum(last_h, dim=1)
 
         return last_h
 
 class MODEL(nn.Module):
 
-    def __init__(self,input_dim,hidden_dim, kernel_size, num_layers,
+    def __init__(self, input_dim, hidden_dim, kernel_size, num_layers,
                  batch_first, n_time_interval, dense1, dense2):
         super(MODEL, self).__init__()
 
-        self.input_dim = input_dim
+        self.hidden_dim = hidden_dim
         self.dense1 = dense1
         self.dense2 = dense2
 
         self.chebylstm = chebLSTM(input_dim, hidden_dim, kernel_size, num_layers,
                  batch_first)
-        self.time_decay = time_Decay(n_time_interval)
+        self.time_decay = time_Decay(num_layers,n_time_interval)
 
         self.mlp = nn.Sequential(
-            nn.Linear(self.input_dim, self.dense1),
+            nn.Linear(self.hidden_dim[-1], self.dense1),
             nn.Tanh(),
             nn.Linear(self.dense1, self.dense2),
             nn.Tanh(),

@@ -9,7 +9,8 @@ import torch.utils.data as Data
 
 #*********data**********
 observation = 3 * 3600 -1
-n_time_interval = 6
+n_time_interval = 6 #
+n_steps = 6 #
 time_interval = math.ceil((observation+1)*1.0/n_time_interval)
 batch_size = 8
 
@@ -20,7 +21,7 @@ input_dim = 100
 dense1 = 32
 dense2 = 16
 
-data_path ="D:\\学术相关\\GCN 项目\\dataset\\"
+data_path ="D:\\学术相关\\GCN 项目\\dataset"
 
 batch_first = True
 model = ChebyLSTM.MODEL(input_dim, hidden_dim, kernel_size, num_layers,
@@ -43,6 +44,8 @@ display_step =1600
 max_try = 10
 patience = max_try
 lr = 0.0005
+best_val_loss =10000
+best_test_loss =10000
 
 for i in range(10):
     if train_step / 160 ==0:
@@ -54,15 +57,16 @@ for i in range(10):
         batch_data_train = Data.DataLoader(data_train, batch_size =batch_size)
 
     for id, batch in enumerate(batch_data_train):
-        batch_x, batch_L, n_steps, batch_y, batch_time_interval, batch_rnn_index = batch
+        batch_x, batch_L, batch_y, batch_time_interval, batch_rnn_index = batch
 
         train_step += 1
         opt1.zero_grad()
+        print(n_steps)
 
         pred = model(batch_x, batch_L, n_steps,
-                     hidden_dim, batch_time_interval, batch_rnn_index)
+                     hidden_dim, batch_rnn_index, batch_time_interval)
 
-        loss = criterion(pred, batch_y)
+        loss = criterion(pred.float(), batch_y.float())
         print('train_loss：', loss)
         train_loss.append(loss)
 
@@ -70,10 +74,10 @@ for i in range(10):
         opt1.step()
 
     if step / display_step == 0:
-        with torch.no_grad:
+        with torch.no_grad():
             if val_step / 160 == 0:
-                input = math.floor(val_step / 160)
-                filepath = data_path + '\\val_train\\val_train_' + str(input) + '.pkl'
+                input = math.floor(step / 160)
+                filepath = data_path + '\\data_val\\data_val_' + str(input) + '.pkl'
                 data_val = dataload.MyDataset(filepath, n_time_interval)
                 val_step = 0
 
@@ -81,40 +85,44 @@ for i in range(10):
 
             val_loss = []
             for id, batch in enumerate(batch_data_val):
-                val_x, val_L, n_steps, val_y, val_time_interval, val_rnn_index = batch
+                val_x, val_L, val_y, val_time_interval, val_rnn_index = batch
                 val_step += 1
 
                 model.eval()
                 val_pred = model(val_x, val_L, n_steps,
-                                 hidden_dim, val_time_interval, val_rnn_index)
+                                 hidden_dim, val_rnn_index, val_time_interval)
 
                 b_v_loss = criterion(val_pred, val_y)
+                print('val_loss：', b_v_loss)
 
                 val_loss.append(b_v_loss)
-            if np.mean(val_loss) < best_val_loss:
-                best_val_loss = np.mean(val_loss)
-                best_test_loss = np.mean(test_loss)
-                patience = max_try
 
-            predict_result = []
             if test_step / 160 == 0:
-                input = math.floor(test_step / 160)
-                filepath = data_path + '\\test_train\\test_train_' + str(input) + '.pkl'
+                input = math.floor(step / 160)
+                filepath = data_path + '\\data_test\\data_test_' + str(input) + '.pkl'
                 data_test = dataload.MyDataset(filepath, n_time_interval)
                 test_step = 0
                 batch_data_test = Data.DataLoader(data_test, batch_size=batch_size)
 
             test_loss = []
             for id, batch in enumerate(batch_data_test):
-                test_x, test_L, n_steps, test_y, test_time_interval, test_rnn_index = batch
+                test_x, test_L, test_y, test_time_interval, test_rnn_index = batch
                 test_step += 1
 
                 model.eval()
                 test_pred = model(test_x, test_L, n_steps,
-                                  hidden_dim, test_time_interval, test_rnn_index)
+                                  hidden_dim, test_rnn_index, test_time_interval)
                 b_t_loss = criterion(test_pred, test_y)
+                print('test_loss',b_t_loss)
 
                 test_loss.append(b_t_loss)
+
+            if np.mean(val_loss) < best_val_loss:
+                best_val_loss = np.mean(val_loss)
+                best_test_loss = np.mean(test_loss)
+                patience = max_try
+
+            predict_result = []
 
             print("last test error:", np.mean(test_loss))
             pickle.dump((predict_result, test_y, test_loss), open(

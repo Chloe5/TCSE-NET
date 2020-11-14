@@ -28,8 +28,6 @@ class MyDataset(Data.Dataset):
             batch_L.append(L[i].todense().tolist())
             batch_y[i,0] = y[i]
 
-            num_step = len(x[i])
-            self.n_steps = num_step
             rnn_index.append(time[i].reshape(-1))
 
 
@@ -46,4 +44,4 @@ class MyDataset(Data.Dataset):
         return self.number
 
     def __getitem__(self, idx):
-        return self.x[idx], self.L[idx],self.n_steps, self.y[idx], self.time_interval_index[idx], self.rnn_index[idx]
+        return self.x[idx], self.L[idx], self.y[idx], self.time_interval_index[idx], self.rnn_index[idx]
