@@ -91,7 +91,7 @@ def get_nodes(graph):
     return nodes
 
 #处理数据 将其转化为输入格式， 节点的embedding X【级联总数，num—sequence，max-num，max-num】，级联所在局部网络的拉普拉斯矩阵L，log（Y），每个级联内连接的发生时间
-def write_XYSIZE_data(graphs,labels,sizes,LEN_SEQUENCE,NUM_SEQUENCE,index,max_num, filename):
+def write_XYSIZE_data(graphs,labels,sizes,LEN_SEQUENCE,NUM_SEQUENCE,index,max_num, n_time_interval,filename):
     #get the x,y,and size  data
     id_data = []
     x_data = []
@@ -105,7 +105,7 @@ def write_XYSIZE_data(graphs,labels,sizes,LEN_SEQUENCE,NUM_SEQUENCE,index,max_nu
         label = labels[key].split()
         y = int(label[LABEL_NUM]) #label
         temp = []
-        temp_time = np.zeros([1,NUM_SEQUENCE],int)#store time
+        temp_time = np.zeros([NUM_SEQUENCE, n_time_interval],int)#store time
         size_temp = len(graph)
         if size_temp !=  sizes[key]:
             print (size_temp,sizes[key])
@@ -118,8 +118,9 @@ def write_XYSIZE_data(graphs,labels,sizes,LEN_SEQUENCE,NUM_SEQUENCE,index,max_nu
         for walk in graph:
             if walk[1] == 0:
                 nx_G.add_edge(nodes_items.get(walk[0][0]), nodes_items.get(walk[0][0]))
-            walk_time = math.floor(walk[1] / 1800) # 3*60 *60/6 观察市长内划分六个时间间隔
-            temp_time[walk_time] = 1
+            walk_time = math.floor(walk[1] / (3*60*60/ NUM_SEQUENCE)) # 3*60 *60/180 观察时长内划分六个时间间隔
+            time_interval = math.floor(walk[1] / (3*60*60 / n_time_interval))
+            temp_time[walk_time, time_interval] = 1
             if not temp_dict.get(walk_time):
                 temp_dict[walk_time] = []
             temp_dict[walk_time].append(walk[0])
@@ -210,7 +211,7 @@ if __name__ == "__main__":
     labels_val, sizes_val = read_labelANDsize(config.cascade_val)
     labels_test, sizes_test = read_labelANDsize(config.cascade_test)
     # NUM_SEQUENCE = max(get_maxsize(sizes_train),get_maxsize(sizes_val),get_maxsize(sizes_test)) #三小时内，转发最多的级联的大小 884
-    NUM_SEQUENCE =6
+    NUM_SEQUENCE =180
     print(NUM_SEQUENCE)
 
     # LEN_SEQUENCE_train = get_max_length(graphs_train)  #每个数据集内， 级联内某一传播链的最大长度
@@ -236,10 +237,10 @@ if __name__ == "__main__":
     index = IndexDict(original_ids)  #字典{节点对id：节点对}
 
     print("create train")
-    write_XYSIZE_data(graphs_train, labels_train,sizes_train,LEN_SEQUENCE,NUM_SEQUENCE,index,max_num, config.train_pkl)
+    write_XYSIZE_data(graphs_train, labels_train,sizes_train,LEN_SEQUENCE,NUM_SEQUENCE,index,max_num,config.n_time_interval, config.train_pkl)
     print("create val an test")
-    write_XYSIZE_data(graphs_val, labels_val, sizes_val,LEN_SEQUENCE,NUM_SEQUENCE,index,max_num, config.val_pkl)
-    write_XYSIZE_data(graphs_test, labels_test, sizes_test,LEN_SEQUENCE,NUM_SEQUENCE,index,max_num,config.test_pkl)
+    write_XYSIZE_data(graphs_val, labels_val, sizes_val,LEN_SEQUENCE,NUM_SEQUENCE,index,max_num,config.n_time_interval, config.val_pkl)
+    write_XYSIZE_data(graphs_test, labels_test, sizes_test,LEN_SEQUENCE,NUM_SEQUENCE,index,max_num,config.n_time_interval, config.test_pkl)
     pickle.dump((len(original_ids),NUM_SEQUENCE,LEN_SEQUENCE), open(config.information,'wb'))
     print("Finish!!!")
 

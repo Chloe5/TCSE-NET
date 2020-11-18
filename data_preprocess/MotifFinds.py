@@ -169,63 +169,63 @@ def motif_times(adjacency_matrix, a, type):
     return adjacency_matrix
 
 
-# def construct_motif(txt_name, times, type, alpha_value):
-#     entry = []
-#     f = open(txt_name)
-#     while True:
-#         line = f.readline()
-#         if line:
-#             temp = []
-#             line = line.replace('\n', '')
-#             line = line.split(';')
-#             for i in range(len(line)):
-#                 temp.append(int(line[i]))
-#             entry.append(temp)
-#         else:
-#             break
-#     spare_array_row = []
-#     spare_array_col = []
-#     spare_array_data = []
-#     entry_all = []
-#     for i in range(len(entry)):
-#         spare_array_row.append(entry[i][0])
-#         spare_array_col.append(entry[i][1])
-#         spare_array_data.append(1)
-#         entry_all.append(entry[i][0])
-#         entry_all.append(entry[i][1])
-#     entry_unique = np.unique(entry_all)
-#     newspare_array_row = []
-#     newspare_array_col = []
-#     counttt = 0
-#     for nnn in range(len(spare_array_row)):
-#         if counttt % 100000 == 0:
-#             print( 'echo is %d' % counttt)
-#         counttt += 1
-#         id1 = spare_array_row[nnn]
-#         id2 = spare_array_col[nnn]
-#         id1new = np.where(entry_unique == id1)[0][0]
-#         id2new = np.where(entry_unique == id2)[0][0]
-#         newspare_array_row.append(id1new)
-#         newspare_array_col.append(id2new)
-#     maxnum = len(entry_unique)
-#     adjacency_matrix = csr_matrix((spare_array_data, (newspare_array_row, newspare_array_col)), shape=(maxnum, maxnum), dtype = np.float64)
-#     # 下面的三行代码主要是为了能够让得到的邻接矩阵为binary，如果希望是weighed，请注释
-#     data_array = adjacency_matrix.data
-#     lennn = data_array.shape[0]
-#     adjacency_matrix.data = np.ones((1, lennn), dtype=np.float64)[0]
-#     # print adjacency_matrix.shape
-#     print( adjacency_matrix.nnz)
-#     result_B = adjacency_matrix.copy()
-#     result_B = normal_matrix(result_B)
-#     result_C = motif_times(adjacency_matrix, times, type)
-#     # alpha_value = 0.99
-#     result_temp1 = result_B.multiply(alpha_value).tolil()
-#     result_temp2 = result_C.multiply(1-alpha_value).tolil()
-#     result_D = result_temp1 + result_temp2
-#     result_D = result_D.tocsr()
-#     print( maxnum)
-#     # return result_C, entry_unique, result_B, result_D
-#     return result_D, entry_unique
+def construct_motif(txt_name, times, type, alpha_value):
+    entry = []
+    f = open(txt_name)
+    while True:
+        line = f.readline()
+        if line:
+            temp = []
+            line = line.replace('\n', '')
+            line = line.split(';')
+            for i in range(len(line)):
+                temp.append(int(line[i]))
+            entry.append(temp)
+        else:
+            break
+    spare_array_row = []
+    spare_array_col = []
+    spare_array_data = []
+    entry_all = []
+    for i in range(len(entry)):
+        spare_array_row.append(entry[i][0])
+        spare_array_col.append(entry[i][1])
+        spare_array_data.append(1)
+        entry_all.append(entry[i][0])
+        entry_all.append(entry[i][1])
+    entry_unique = np.unique(entry_all) #去重？
+    newspare_array_row = []
+    newspare_array_col = []
+    counttt = 0
+    for nnn in range(len(spare_array_row)):
+        if counttt % 100000 == 0:
+            print( 'echo is %d' % counttt)
+        counttt += 1
+        id1 = spare_array_row[nnn]
+        id2 = spare_array_col[nnn]
+        id1new = np.where(entry_unique == id1)[0][0]
+        id2new = np.where(entry_unique == id2)[0][0]
+        newspare_array_row.append(id1new)
+        newspare_array_col.append(id2new)
+    maxnum = len(entry_unique)
+    adjacency_matrix = csr_matrix((spare_array_data, (newspare_array_row, newspare_array_col)), shape=(maxnum, maxnum), dtype = np.float64)
+    # 下面的三行代码主要是为了能够让得到的邻接矩阵为binary，如果希望是weighed，请注释
+    data_array = adjacency_matrix.data
+    lennn = data_array.shape[0]
+    adjacency_matrix.data = np.ones((1, lennn), dtype=np.float64)[0]
+    # print adjacency_matrix.shape
+    print( adjacency_matrix.nnz)
+    result_B = adjacency_matrix.copy()
+    result_B = normal_matrix(result_B)  #归一化的邻接矩阵
+    result_C = motif_times(adjacency_matrix, times, type)  # 某一type的motif矩阵
+    # alpha_value = 0.99
+    result_temp1 = result_B.multiply(alpha_value).tolil()
+    result_temp2 = result_C.multiply(1-alpha_value).tolil()
+    result_D = result_temp1 + result_temp2
+    result_D = result_D.tocsr()
+    print( maxnum)
+    # return result_C, entry_unique, result_B, result_D
+    return result_D, entry_unique
 
 
 def binary(a_original):

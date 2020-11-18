@@ -1,10 +1,10 @@
 import pickle
 import math
 import gc
-path ="D:\\学术相关\\GCN 项目\\dataset\\data_val"
+path ="D:\\DKs-workshop\\canCN_pytorch\\dataset\\180_timeinterval"
 id_train, x_train, L, y_train, sz_train, time_train, vocabulary_size = pickle.load(open(path+'\\data_val.pkl', 'rb'))
 step =1
-filename = 'D:\\学术相关\\GCN 项目\\dataset\\data_val\\data_val_'
+filename = 'D:\\DKs-workshop\\canCN_pytorch\\dataset\\180_timeinterval\\data_val\\data_val_'
 print(len(id_train)) #train_41975 test_8950 val_8941
 for i in range(math.floor(len(id_train) / 320)):
     pickle.dump((id_train[i * 320:(i + 1) * 320], x_train[i * 320:(i + 1) * 320], L[i * 320:(i + 1) * 320],

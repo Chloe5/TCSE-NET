@@ -2,6 +2,7 @@ import numpy as np
 import scipy.sparse as sp
 import networkx as nx
 from scipy.sparse import identity, spdiags, linalg
+from data_preprocess import MotifFinds
 
 def caslaplacian_matrix(G, nodelist=None, weight='weight',alpha=0.95):
     import scipy as sp
@@ -13,7 +14,7 @@ def caslaplacian_matrix(G, nodelist=None, weight='weight',alpha=0.95):
     # this is using a dense representation
     M = M.todense()
     # add constant to dangling nodes' row
-    dangling = sp.where(M.sum(axis=1) == 0)
+    dangling = sp.where(M.sum(axis=1) == 0) #出度为0
     for d in dangling[0]:
         M[d] = 1.0 / n
     # normalize
@@ -32,6 +33,7 @@ def motiflaplacian_matrix(G, nodelist =None, weight = 'weight'):
     import scipy as sp
     M = nx.to_scipy_sparse_matrix(G, nodelist=nodelist, weight=weight,
                                   dtype=float)
+    motifL = MotifFinds.motif_times(M)
     return
     #weiwan
 

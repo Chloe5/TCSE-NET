@@ -35,13 +35,24 @@ class chebLSTMCell(nn.Module):
     # 这里forward有两个输入参数，input_tensor 是一个4维数据c
     # （t时间步,b输入batch_ize,c输出数据通道数--维度,h,w图像高乘宽）
     # hidden_state=None 默认刚输入hidden_state为空，等着后面给初始化
-    def forward(self, input_tensor, graph, cur_state):
+    def forward(self, input_tensor, graph, cur_state, batch_size):
         h_cur, c_cur = cur_state
 
-        x = self.chebgcn1(input_tensor, graph)
-        h_cur_conv = self.chebgcn2(h_cur,graph)
+        # input_tensor = torch.split(input_tensor, batch_size, dim=0)
+        # graph = torch.split(graph, batch_size, dim=0)
+        # h_cur = torch.split(h_cur, batch_size, dim=0)
 
-        combined = x + h_cur_conv
+        for i in range(batch_size):
+            x_cov = self.chebgcn1(input_tensor[i], graph[i])
+            h_cur_conv = self.chebgcn2(h_cur[i], graph[i])
+            if i == 0:
+                x_batch = x_cov
+                h_cur_batch = h_cur_conv
+            else:
+                x_batch = torch.cat((x_batch,x_cov), dim =0)
+                h_cur_batch = torch.cat((h_cur_batch,h_cur_conv),dim =0)
+
+        combined = x_batch + h_cur_batch
         #combined = torch.cat([x, h_cur], dim=1)
           # concatenate along channel
         cc_i, cc_f, cc_o, cc_g = torch.split(combined, self.hidden_dim, dim=2) #将combined的第1维 划分为hidden_dim块
@@ -162,8 +173,8 @@ class chebLSTM(nn.Module):
             # 每一个时间步都更新 h,c
             # 注意这里self.cell_list是一个模块(容器)
             for t in range(seq_len):
-                h, c = self.cell_list[layer_idx](input_tensor=cur_layer_input[:, t, :, :], graph=graph[t],
-                                                 cur_state=[h, c])
+                h, c = self.cell_list[layer_idx](input_tensor=cur_layer_input[:, t, :, :], graph = graph,
+                                                 cur_state=[h, c], batch_size = b)
 
                 # 储存输出，注意这里 h 就是此时间步的输出
                 output_inner.append(h)
@@ -204,12 +215,14 @@ class chebLSTM(nn.Module):
         return param
 
 class time_Decay(nn.Module):
-    def __init__(self, num_layers, time_interal_n):
+    def __init__(self, num_layers, n_time_interval):
         super(time_Decay,self).__init__()
 
         self.num_layers = num_layers
+        self.n_time_interval = n_time_interval
 
-        self.time_weight = nn.Parameter(torch.FloatTensor(time_interal_n,1))
+        self.time_weight = nn.Parameter(torch.FloatTensor(n_time_interval,1))
+        nn.init.xavier_normal_(self.time_weight)
 
     def forward(self, last_h, n_step, hidden_dim, rnn_index, time_interval_index):
         for t in range(self.num_layers):
@@ -218,10 +231,10 @@ class time_Decay(nn.Module):
             last_h = last_h.squeeze().permute(1, 0, 2, 3)  # batch first
             last_h = torch.sum(last_h, dim=2)
             last_h = torch.reshape(last_h, (-1, hidden_dim[t]))
-            rnn_index = torch.reshape(rnn_index, (-1, 1))
+            rnn_index = torch.reshape(rnn_index, (-1, 1)) #batch_size*num_sequences
             last_h = torch.mul(rnn_index, last_h)
 
-            time_interval_index = torch.reshape(time_interval_index, (-1, 6))
+            time_interval_index = torch.reshape(time_interval_index, (-1, self.n_time_interval))
             time_interval_index = time_interval_index.matmul(self.time_weight)
             last_h = torch.mul(time_interval_index, last_h)
             last_h = torch.reshape(last_h, (-1, n_step, hidden_dim[t]))
@@ -245,11 +258,11 @@ class MODEL(nn.Module):
 
         self.mlp = nn.Sequential(
             nn.Linear(self.hidden_dim[-1], self.dense1),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Linear(self.dense1, self.dense2),
-            nn.Tanh(),
+            nn.ReLU(),
             nn.Linear(self.dense2,1),
-            nn.Tanh()
+            nn.ReLU()
         )
     def forward(self, input_tensor, graph, n_step,
                 hidden_dim, rnn_index, time_interval_index):

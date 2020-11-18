@@ -1,5 +1,5 @@
 import math
-DATA_PATHA = "D:\\学术相关\\007.CasCN-master\\dataset_weibo"
+DATA_PATHA = "D:\\DKs-workshop\\004.CasCN-master\\dataset_weibo"
 
 
 cascades  = DATA_PATHA+"\\dataset_weibo.txt"
@@ -11,10 +11,10 @@ shortestpath_train = DATA_PATHA+"\\shortestpath_train.txt"
 shortestpath_val = DATA_PATHA+"\\shortestpath_val.txt"
 shortestpath_test = DATA_PATHA+"\\shortestpath_test.txt"
 
-train_pkl = "D:\\学术相关\\GCN 项目\\dataset\\data_train\\data_train.pkl"
-val_pkl = "D:\\学术相关\\GCN 项目\\dataset\\data_val\\data_val.pkl"
-test_pkl = "D:\\学术相关\\GCN 项目\\dataset\\\data_test\\data_test.pkl"
-information = "D:\\学术相关\\GCN 项目\\dataset\\\information.pkl"
+train_pkl = "D:\\DKs-workshop\\canCN_pytorch\\dataset\\180_timeinterval\\data_train.pkl"
+val_pkl = "D:\\DKs-workshop\\canCN_pytorch\\dataset\\180_timeinterval\\data_val.pkl"
+test_pkl = "D:\\DKs-workshop\\canCN_pytorch\\dataset\\180_timeinterval\\data_test.pkl"
+information = "D:\\DKs-workshop\\canCN_pytorch\\dataset\\180_timeinterval\\information.pkl"
 
 # parameters
 observation = 3 * 60 * 60 - 1
