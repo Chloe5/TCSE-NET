@@ -77,6 +77,7 @@ for e in range(Epoch):
             opt1.step()
 
     #evaluation and test
+    predict_result = []
     with torch.no_grad():
         filepath = data_path + '\\data_val\\'
         filelist = os.listdir(filepath)
@@ -111,6 +112,7 @@ for e in range(Epoch):
                                   hidden_dim, test_rnn_index, test_time_interval)
                 b_t_loss = criterion(test_pred, test_y)
 
+                predict_result.append(test_pred)
                 test_loss.append(b_t_loss)
                 print('test_loss', np.mean(test_loss))
 
@@ -119,7 +121,7 @@ for e in range(Epoch):
             best_test_loss = np.mean(test_loss)
             patience = max_try
 
-        predict_result = []
+
 
         print("last test error:", np.mean(test_loss))
         pickle.dump((predict_result, test_y, test_loss), open(
@@ -133,9 +135,16 @@ for e in range(Epoch):
               )
 
         model.train()
+        train_loss = []
         patience -= 1
         if not patience:
             break
+
+    state = {'model':model.state_dict(), 'optimizer':opt1.state_dict(), 'epoch':Epoch}
+    torch.save(state, data_path+'\\casCN_180.pth')
+
+
+
 
 
 print(len(predict_result), len(test_y))
